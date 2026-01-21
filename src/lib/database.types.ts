@@ -28,10 +28,22 @@ export type Database = {
         Insert: Omit<Database['public']['Tables']['labs']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['labs']['Insert']>;
       };
+      profiles: {
+        Row: {
+          id: string;
+          email: string;
+          full_name: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['profiles']['Row'], 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['profiles']['Insert']>;
+      };
       user_progress: {
         Row: {
           id: string;
-          user_id: string;
+          user_id: string | null;
+          user_uuid: string | null;
           module_name: string;
           module_level: string;
           points: number;
@@ -44,7 +56,8 @@ export type Database = {
       daily_activity: {
         Row: {
           id: string;
-          user_id: string;
+          user_id: string | null;
+          user_uuid: string | null;
           activity_date: string;
           modules_completed: number;
           created_at: string;

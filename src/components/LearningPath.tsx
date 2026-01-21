@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { CheckCircle, Circle, Lock, BookOpen } from 'lucide-react';
 import { ModuleContent } from './ModuleContent';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Module {
   name: string;
@@ -21,6 +22,7 @@ interface CompletedModules {
 }
 
 export function LearningPath({ onModuleStart }: LearningPathProps) {
+  const { user } = useAuth();
   const [activeModule, setActiveModule] = useState<{ name: string; level: string } | null>(null);
   const [completedModules, setCompletedModules] = useState<CompletedModules>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -188,11 +190,13 @@ export function LearningPath({ onModuleStart }: LearningPathProps) {
   }, [completedModules]);
 
   const loadCompletedModules = async () => {
+    if (!user) return;
+
     try {
       const { data, error } = await supabase
         .from('user_progress')
         .select('module_name')
-        .eq('user_id', 'default_user');
+        .eq('user_uuid', user.id);
 
       if (error) throw error;
 
@@ -245,6 +249,8 @@ export function LearningPath({ onModuleStart }: LearningPathProps) {
   };
 
   const handleModuleComplete = async () => {
+    if (!user || !activeModule) return;
+
     if (activeModule) {
       const module = initialPaths
         .flatMap(p => p.modules)
@@ -255,7 +261,7 @@ export function LearningPath({ onModuleStart }: LearningPathProps) {
           await supabase
             .from('user_progress')
             .insert({
-              user_id: 'default_user',
+              user_uuid: user.id,
               module_name: activeModule.name,
               module_level: activeModule.level,
               points: module.points,
@@ -265,7 +271,7 @@ export function LearningPath({ onModuleStart }: LearningPathProps) {
           const { data: existingActivity } = await supabase
             .from('daily_activity')
             .select('*')
-            .eq('user_id', 'default_user')
+            .eq('user_uuid', user.id)
             .eq('activity_date', today)
             .maybeSingle();
 
@@ -278,7 +284,7 @@ export function LearningPath({ onModuleStart }: LearningPathProps) {
             await supabase
               .from('daily_activity')
               .insert({
-                user_id: 'default_user',
+                user_uuid: user.id,
                 activity_date: today,
                 modules_completed: 1,
               });
